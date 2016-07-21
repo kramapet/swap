@@ -23,26 +23,63 @@ abstract class AbstractProviderTestCase extends \PHPUnit_Framework_TestCase
      */
     protected function getHttpAdapterMock($url, $content)
     {
-        $body = $this->getMock('Psr\Http\Message\StreamInterface');
-        $body
-            ->expects($this->once())
-            ->method('__toString')
-            ->will($this->returnValue($content));
-
-        $response = $this->getMock('\Ivory\HttpAdapter\Message\ResponseInterface');
-        $response
-            ->expects($this->once())
-            ->method('getBody')
-            ->will($this->returnValue($body));
-
         $adapter = $this->getMock('Ivory\HttpAdapter\HttpAdapterInterface');
 
         $adapter
             ->expects($this->once())
             ->method('get')
             ->with($url)
-            ->will($this->returnValue($response));
+            ->will($this->returnValue($this->createResponse($content)));
 
         return $adapter;
+    }
+
+    /**
+     * Create a mocked Http adapter with multiple urls.
+     *
+     * @param array $urls     list of URLs
+     * @param array $contents list of contents
+     *
+     * @return \Ivory\HttpAdapter\HttpAdapterInterface
+     */
+    protected function getHttpAdapterMockWithMultipleUrls($urls, $contents)
+    {
+        $map = [];
+        foreach ($urls as $i => $url) {
+            $map[] = [$url, [], $this->createResponse($contents[$i])];
+        }
+
+        $adapter = $this->getMock('Ivory\HttpAdapter\HttpAdapterInterface');
+
+        $adapter
+            ->expects($this->any())
+            ->method('get')
+            ->will($this->returnValueMap($map));
+
+        return $adapter;
+    }
+
+    /**
+     * Create response for Ivory\HttpAdapter\HttpAdapterInterface.
+     *
+     * @param string $content
+     *
+     * @return Ivory\HttpAdapter\Message\ResponseInterface
+     */
+    private function createResponse($content)
+    {
+        $body = $this->getMock('Psr\Http\Message\StreamInterface');
+        $body
+            ->expects($this->any())
+            ->method('__toString')
+            ->will($this->returnValue($content));
+
+        $response = $this->getMock('Ivory\HttpAdapter\Message\ResponseInterface');
+        $response
+            ->expects($this->any())
+            ->method('getBody')
+            ->will($this->returnValue($body));
+
+        return $response;
     }
 }
